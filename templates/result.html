@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Booking Results</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+        }
+
+        .bus-details {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .bus-details h2 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .bus-details p {
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bus Booking Results</h1>
+
+    {% if bus_details %}
+        <div class="bus-details">
+            <h2>Bus Details</h2>
+            <p><strong>Bus Number:</strong> {{ bus_details[0] }}</p>
+            <p><strong>Company Name:</strong> {{ bus_details[1] }}</p>
+            <p><strong>Departure Time:</strong> {{ bus_details[2] }}</p>
+            <p><strong>Arrival Time:</strong> {{ bus_details[3] }}</p>
+            <p><strong>Price:</strong> {{ bus_details[4] }}</p>
+            <p><strong>Distance:</strong> {{ bus_details[5] }}</p>
+            <p><strong>Departure Date:</strong> {{ bus_details[6] }}</p>
+        </div>
+    {% else %}
+        <p>No bus details available.</p>
+    {% endif %}
+
+</body>
+</html>
