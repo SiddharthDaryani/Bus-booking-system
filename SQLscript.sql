@@ -287,3 +287,6 @@ SELECT * FROM availableseats WHERE ScheduleID = 1;
 -- Trying to book seat number 12 on Schedule 1 for User 1
 CALL BookSeat(1, 12, 1);
 SELECT * FROM booking WHERE ScheduleID = 1 AND UserID = 1 AND SeatNumber = 12;
+
+-- Verify the seat is removed from available_seats
+SELECT * FROM availableseats WHERE ScheduleID = 1 AND SeatNumber = 12;

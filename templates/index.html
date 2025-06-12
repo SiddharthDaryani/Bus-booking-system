@@ -4,98 +4,268 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bus Booking</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f4f4f4;
+            font-family: 'Inter', sans-serif;
         }
-
-        .booking-form {
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            width: 300px;
+        /* Custom styles for disabled/selected dates/seats */
+        .date-button.disabled {
+            background-color: #e0e0e0;
+            color: #a0a0a0;
+            cursor: not-allowed;
+            border: 1px solid #c0c0c0;
         }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-        }
-
-        select, input {
-            width: calc(100% - 12px);
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        button {
-            background-color: #007bff;
+        .date-button.selected {
+            background-color: #10B981; /* Green for selected date */
             color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
         }
-
-        button:hover {
-            background-color: #0056b3;
+        .seat-button {
+            transition: background-color 0.2s;
+        }
+        .seat-button.available:hover {
+            background-color: #60A5FA; /* Blue on hover for available */
+        }
+        .seat-button.unavailable {
+            background-color: #EF4444; /* Red for unavailable */
+            color: white;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .seat-button.selected {
+            background-color: #10B981; /* Green for selected seat */
+            color: white;
         }
     </style>
 </head>
-<body>
-    <div class="booking-form">
-        <h2>Bus Booking</h2>
+<body class="flex items-center justify-center min-h-screen bg-gray-100 p-4">
+    <div class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
+        <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">Bus Booking</h2>
 
+        <!-- Error Message Display -->
         {% if error_message %}
-            <p style="color: red;">{{ error_message }}</p>
+            <p id="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <strong class="font-bold">Error!</strong>
+                <span class="block sm:inline">{{ error_message }}</span>
+            </p>
         {% endif %}
 
-        <form id="busBookingForm" method="POST">
+        <form id="busBookingForm" method="POST" class="space-y-4">
             <div class="form-group">
-                <label for="userId">User ID:</label>
-                <input type="text" id="userId" name="userId" required>
+                <label for="userId" class="block text-gray-700 text-sm font-medium mb-1">User ID:</label>
+                <input type="text" id="userId" name="userId" required
+                       class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
             </div>
+            
             <div class="form-group">
-                <label for="source">Source:</label>
-                <select id="source" name="source" required>
+                <label for="source" class="block text-gray-700 text-sm font-medium mb-1">Source:</label>
+                <select id="source" name="source" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
                     <option value="">Select Source</option>
                     <option value="New York">New York</option>
                     <option value="Los Angeles">Los Angeles</option>
                     <option value="Chicago">Chicago</option>
+                    <!-- Add more sources as needed -->
                 </select>
             </div>
+
             <div class="form-group">
-                <label for="destination">Destination:</label>
-                <select id="destination" name="destination" required>
+                <label for="destination" class="block text-gray-700 text-sm font-medium mb-1">Destination:</label>
+                <select id="destination" name="destination" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white">
                     <option value="">Select Destination</option>
                     <option value="Boston">Boston</option>
                     <option value="San Francisco">San Francisco</option>
                     <option value="Miami">Miami</option>
+                    <!-- Add more destinations as needed -->
                 </select>
             </div>
+
+            <!-- Dynamic Date Selection Area -->
             <div class="form-group">
-                <label for="travelDate">Travel Date:</label>
-                <input type="date" id="travelDate" name="travelDate" required>
+                <label class="block text-gray-700 text-sm font-medium mb-2">Available Travel Dates:</label>
+                <div id="dateSelection" class="grid grid-cols-3 gap-2 p-2 bg-gray-50 rounded-md border border-gray-200">
+                    <p class="text-gray-500 text-sm col-span-3">Select Source and Destination to see dates.</p>
+                </div>
+                <input type="hidden" id="travelDate" name="travelDate" required>
+                <!-- Hidden input for schedule_id to pass to seat selection API -->
+                <input type="hidden" id="selectedScheduleId" name="selectedScheduleId">
             </div>
+
+            <!-- Dynamic Seat Selection Area -->
             <div class="form-group">
-                <label for="seatNumber">Seat Number (1-50):</label>
-                <input type="number" id="seatNumber" name="seatNumber" min="1" max="50" required>
+                <label class="block text-gray-700 text-sm font-medium mb-2">Available Seats:</label>
+                <div id="seatSelection" class="grid grid-cols-5 gap-2 p-2 bg-gray-50 rounded-md border border-gray-200">
+                    <p class="text-gray-500 text-sm col-span-5">Select a Travel Date to see available seats.</p>
+                </div>
+                <input type="hidden" id="seatNumber" name="seatNumber" required>
             </div>
-            <button type="submit">Search Buses</button>
+
+            <button type="submit" id="submitButton"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled>
+                Book Bus
+            </button>
         </form>
     </div>
+
+    <script>
+        const sourceSelect = document.getElementById('source');
+        const destinationSelect = document.getElementById('destination');
+        const dateSelectionDiv = document.getElementById('dateSelection');
+        const travelDateInput = document.getElementById('travelDate');
+        const seatSelectionDiv = document.getElementById('seatSelection');
+        const seatNumberInput = document.getElementById('seatNumber');
+        const selectedScheduleIdInput = document.getElementById('selectedScheduleId');
+        const submitButton = document.getElementById('submitButton');
+
+        let selectedDateElement = null; // To keep track of the currently selected date button
+        let selectedSeatElement = null; // To keep track of the currently selected seat button
+
+        // Function to enable/disable submit button
+        function updateSubmitButtonState() {
+            if (travelDateInput.value && seatNumberInput.value) {
+                submitButton.removeAttribute('disabled');
+            } else {
+                submitButton.setAttribute('disabled', 'true');
+            }
+        }
+
+        // Function to fetch available dates
+        async function fetchAvailableDates() {
+            const source = sourceSelect.value;
+            const destination = destinationSelect.value;
+
+            if (!source || !destination) {
+                dateSelectionDiv.innerHTML = '<p class="text-gray-500 text-sm col-span-3">Select Source and Destination to see dates.</p>';
+                travelDateInput.value = '';
+                seatSelectionDiv.innerHTML = '<p class="text-gray-500 text-sm col-span-5">Select a Travel Date to see available seats.</p>';
+                seatNumberInput.value = '';
+                selectedScheduleIdInput.value = '';
+                updateSubmitButtonState();
+                return;
+            }
+
+            dateSelectionDiv.innerHTML = '<p class="text-blue-500 text-sm col-span-3">Loading dates...</p>';
+            travelDateInput.value = ''; // Reset date
+            seatSelectionDiv.innerHTML = '<p class="text-gray-500 text-sm col-span-5">Select a Travel Date to see available seats.</p>';
+            seatNumberInput.value = ''; // Reset seat
+            selectedScheduleIdInput.value = ''; // Reset schedule ID
+            updateSubmitButtonState();
+
+
+            try {
+                const response = await fetch(`/api/available_dates?source=${encodeURIComponent(source)}&destination=${encodeURIComponent(destination)}`);
+                const data = await response.json();
+
+                dateSelectionDiv.innerHTML = ''; // Clear previous dates
+
+                if (data.length > 0) {
+                    data.forEach(bus => {
+                        const dateButton = document.createElement('button');
+                        dateButton.type = 'button';
+                        dateButton.textContent = bus.TravelDate; // Assuming TravelDate is in a displayable format
+                        dateButton.dataset.scheduleId = bus.ScheduleID; // Store ScheduleID for seat lookup
+                        dateButton.dataset.travelDate = bus.TravelDate; // Store original travel date string
+                        dateButton.className = 'date-button px-3 py-2 rounded-md border border-blue-300 bg-blue-50 text-blue-800 text-sm font-medium hover:bg-blue-100 transition duration-150 ease-in-out';
+                        
+                        dateButton.addEventListener('click', () => {
+                            // Deselect previously selected date
+                            if (selectedDateElement) {
+                                selectedDateElement.classList.remove('selected', 'bg-emerald-500');
+                                selectedDateElement.classList.add('bg-blue-50');
+                            }
+                            selectedDateElement = dateButton;
+                            dateButton.classList.add('selected', 'bg-emerald-500');
+                            dateButton.classList.remove('bg-blue-50');
+
+                            travelDateInput.value = bus.TravelDate; // Set hidden input value
+                            selectedScheduleIdInput.value = bus.ScheduleID; // Set hidden schedule ID
+                            fetchAvailableSeats(bus.ScheduleID); // Fetch seats for this schedule
+                            updateSubmitButtonState();
+                        });
+                        dateSelectionDiv.appendChild(dateButton);
+                    });
+                } else {
+                    dateSelectionDiv.innerHTML = '<p class="text-gray-500 text-sm col-span-3">No buses found for this route.</p>';
+                }
+
+            } catch (error) {
+                console.error('Error fetching available dates:', error);
+                dateSelectionDiv.innerHTML = '<p class="text-red-500 text-sm col-span-3">Error loading dates. Please try again.</p>';
+            }
+        }
+
+        // Function to fetch available seats for a given schedule ID
+        async function fetchAvailableSeats(scheduleId) {
+            seatSelectionDiv.innerHTML = '<p class="text-blue-500 text-sm col-span-5">Loading seats...</p>';
+            seatNumberInput.value = ''; // Reset seat number
+            updateSubmitButtonState();
+
+            try {
+                const response = await fetch(`/api/available_seats?schedule_id=${encodeURIComponent(scheduleId)}`);
+                const data = await response.json(); // Expected: { total_seats: 50, occupied_seats: [1, 5, 10] }
+
+                seatSelectionDiv.innerHTML = ''; // Clear previous seats
+                selectedSeatElement = null; // Reset selected seat element
+
+                if (data && data.total_seats) {
+                    const totalSeats = data.total_seats;
+                    const occupiedSeats = new Set(data.occupied_seats);
+
+                    for (let i = 1; i <= totalSeats; i++) {
+                        const seatButton = document.createElement('button');
+                        seatButton.type = 'button';
+                        seatButton.textContent = i;
+                        seatButton.dataset.seatNumber = i;
+                        seatButton.className = 'seat-button px-2 py-1 rounded-md text-sm font-medium transition duration-150 ease-in-out';
+
+                        if (occupiedSeats.has(i)) {
+                            seatButton.classList.add('unavailable', 'bg-red-500', 'text-white');
+                            seatButton.setAttribute('disabled', 'true');
+                        } else {
+                            seatButton.classList.add('available', 'bg-gray-200', 'text-gray-800');
+                            seatButton.addEventListener('click', () => {
+                                // Deselect previously selected seat
+                                if (selectedSeatElement) {
+                                    selectedSeatElement.classList.remove('selected', 'bg-emerald-500', 'text-white');
+                                    selectedSeatElement.classList.add('bg-gray-200', 'text-gray-800');
+                                }
+                                selectedSeatElement = seatButton;
+                                seatButton.classList.add('selected', 'bg-emerald-500', 'text-white');
+                                seatButton.classList.remove('bg-gray-200', 'text-gray-800');
+                                seatNumberInput.value = i; // Set hidden input value
+                                updateSubmitButtonState();
+                            });
+                        }
+                        seatSelectionDiv.appendChild(seatButton);
+                    }
+                } else {
+                    seatSelectionDiv.innerHTML = '<p class="text-red-500 text-sm col-span-5">Error fetching seat data or no seats found.</p>';
+                }
+            } catch (error) {
+                console.error('Error fetching available seats:', error);
+                seatSelectionDiv.innerHTML = '<p class="text-red-500 text-sm col-span-5">Error loading seats. Please try again.</p>';
+            }
+        }
+
+        // Event listeners for source and destination changes
+        sourceSelect.addEventListener('change', fetchAvailableDates);
+        destinationSelect.addEventListener('change', fetchAvailableDates);
+
+        // Initial call to set button state (disabled)
+        updateSubmitButtonState();
+
+        // If there was an error message on load, make it dismissable
+        const errorMessageDiv = document.getElementById('errorMessage');
+        if (errorMessageDiv) {
+            errorMessageDiv.addEventListener('click', () => {
+                errorMessageDiv.style.display = 'none';
+            });
+        }
+    </script>
 </body>
 </html>
