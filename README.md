@@ -1,11 +1,11 @@
 # **Bus Booking System**
 
 ### TO RUN ON YOUR SYSTEM FORK THE REPOSITORY USING
-...console
+```console
 git clone https://github.com/SiddharthDaryani/Bus-booking-system.git
 cd Bus-booking-system
 source init_setup.sh
-...
+```
 
 ## **Skills Mastered:**
 
