@@ -4,7 +4,7 @@ from datetime import datetime
 
 # Define the base path for your application logs
 # This path was provided by you earlier.
-base_application_path = '/run/media/siddharth/D drive/Bus-booking-system'
+base_application_path = os.getcwd()
 log_folder_name = 'logs'
 
 # Construct the full path to the logs directory
